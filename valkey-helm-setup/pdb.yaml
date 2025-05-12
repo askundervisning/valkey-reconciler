@@ -1,0 +1,14 @@
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: valkey-cluster
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: node
+      app.kubernetes.io/instance: valkey-cluster
+      app.kubernetes.io/name: valkey
+
+

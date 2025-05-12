@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: valkey-reconciler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: valkey-reconciler
+  template:
+    metadata:
+      labels:
+        app: valkey-reconciler
+    spec:
+      serviceAccountName: valkey-reconciler-sa
+      containers:
+      - name: valkey-reconciler
+        imagePullPolicy: IfNotPresent
+        image: valkey-reconciler:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: VALKEY_SENTINEL_HOST
+          value: "vk-valkey-headless"
+        - name: VALKEY_SENTINEL_PORT
+          value: "26379"
+        - name: VALKEY_SENTINEL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: valkey-cluster
+              key: password
+        - name: VALKEY_MASTER_NAME
+          value: "myprimary"
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MASTER_POD_LABEL_NAME
+          value: "vk-master"
+        - name: MASTER_POD_LABEL_VALUE
+          value: "true"
+
+        resources:
+          requests:
+            cpu: 10m
+            memory: 28Mi
+          limits:
+            cpu: 100m
+            memory: 148Mi

@@ -1,0 +1,39 @@
+---
+# Base configuration; we want a master with multiple replicas, controlled by sentinel.
+# Ref. https://github.com/bitnami/charts/tree/main/bitnami/valkey#master-replicas-with-sentinel
+architecture: replication
+sentinel:
+  enabled: true
+  resources:
+    limits:
+      cpu: 100m
+      ephemeral-storage: 2Gi
+      memory: 384Mi
+    requests:
+      cpu: 100m
+      ephemeral-storage: 50Mi
+      memory: 256Mi
+
+auth:
+  sentinel: true
+  existingSecret: "valkey-cluster"
+
+tls:
+  enabled: false
+  authClients: false
+
+replica:
+    "asku.prometheus/scrape": "true"
+  livenessProbe:
+    timeoutSeconds: 50
+  readynessProbe:
+    timeoutSeconds: 10
+  resources:
+    limits:
+      cpu: 300m
+      ephemeral-storage: 2Gi
+      memory: 384Mi
+    requests:
+      cpu: 100m
+      ephemeral-storage: 50Mi
+      memory: 256Mi

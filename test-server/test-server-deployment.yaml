@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-server
+  template:
+    metadata:
+      labels:
+        app: test-server
+    spec:
+      containers:
+      - name: test-server
+        imagePullPolicy: IfNotPresent
+        image: reconciler-test-server:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: VALKEY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: valkey-cluster
+              key: password
+        - name: VALKEY_HOST
+          value: "valkey"
+        - name: VALKEY_PORT
+          value: "6379"
+
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m
+            memory: 148Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-server
+spec:
+  selector:
+    app: test-server
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
