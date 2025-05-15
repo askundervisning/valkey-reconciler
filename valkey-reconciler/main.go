@@ -77,7 +77,10 @@ func getCurrentMaster(ctx context.Context, config *Config) ([]string, error) {
 	})
 
 	log.Printf("Searching for current master at host: %s, port: %s, master name: %s", config.SentinelHost, config.SentinelPort, config.MasterName)
+	return getCurrentMasterFromSentinel(ctx, config, sentinel)
+}
 
+func getCurrentMasterFromSentinel(ctx context.Context, config *Config, sentinel *redis.SentinelClient) ([]string, error) {
 	masterAddress, err := sentinel.GetMasterAddrByName(ctx, config.MasterName).Result()
 
 	if err != nil {
@@ -87,6 +90,7 @@ func getCurrentMaster(ctx context.Context, config *Config) ([]string, error) {
 
 	return masterAddress, nil
 }
+
 
 func setCurrentMaster(ctx context.Context, config *Config, masterAddress []string) {
 
@@ -163,6 +167,17 @@ func listenForSwitchMasterEvents(ctx context.Context, config *Config, currentMas
 			ReadTimeout: 1 * time.Second,
 			OnConnect: func(ctx context.Context, cn *redis.Conn) error {
 				log.Printf("Connection established")
+
+				currentMaster, err := getCurrentMaster(ctx, config)
+				if err != nil {
+					log.Printf("Failed to get current master: %v", err)
+					return nil
+				}
+
+				log.Printf("Current master: %v", currentMaster)
+
+				setCurrentMaster(ctx, config, currentMaster)
+
 				return nil
 			},
 		})
