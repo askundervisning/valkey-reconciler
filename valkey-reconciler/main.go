@@ -159,12 +159,12 @@ func listenForSwitchMasterEvents(ctx context.Context, config *Config, currentMas
 			TLSConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
-			MaxRetries: -1,
-			/*			OnConnect: func(ctx context.Context, cn *redis.Conn) error {
-							log.Printf("Connected to sentinel %s", cn.ClientInfo(ctx).Val().LAddr)
-							return nil
-						},
-			*/
+			MaxRetries:  -1,
+			ReadTimeout: 1 * time.Second,
+			OnConnect: func(ctx context.Context, cn *redis.Conn) error {
+				log.Printf("Connection established")
+				return nil
+			},
 		})
 
 		_, pingErr := sentinel.Ping(ctx).Result()
@@ -187,7 +187,7 @@ func listenForSwitchMasterEvents(ctx context.Context, config *Config, currentMas
 		log.Printf("Subscribed to switch-master events")
 
 		// Consume messages.
-		for msg := range pubsub.Channel() {
+		for msg := range pubsub.Channel(redis.WithChannelHealthCheckInterval(1 * time.Second)) {
 			log.Printf("Received %s message %s", msg.Channel, msg.Payload)
 
 			if msg.Channel == "+switch-master" {
