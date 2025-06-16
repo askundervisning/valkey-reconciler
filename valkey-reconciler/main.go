@@ -16,6 +16,11 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+// SentinelClient interface for testing
+type SentinelClient interface {
+	GetMasterAddrByName(ctx context.Context, name string) *redis.StringSliceCmd
+}
+
 const (
 	// Environment variables
 	envValkeySentinelPort     = "VALKEY_SENTINEL_PORT"
@@ -80,7 +85,7 @@ func getCurrentMaster(ctx context.Context, config *Config) ([]string, error) {
 	return getCurrentMasterFromSentinel(ctx, config, sentinel)
 }
 
-func getCurrentMasterFromSentinel(ctx context.Context, config *Config, sentinel *redis.SentinelClient) ([]string, error) {
+func getCurrentMasterFromSentinel(ctx context.Context, config *Config, sentinel SentinelClient) ([]string, error) {
 	masterAddress, err := sentinel.GetMasterAddrByName(ctx, config.MasterName).Result()
 
 	if err != nil {
@@ -215,6 +220,15 @@ func listenForSwitchMasterEvents(ctx context.Context, config *Config, currentMas
 					continue
 				}
 				setCurrentMaster(ctx, config, parts[3:5])
+			} else if msg.Channel == "+reboot" {
+				log.Printf("Received reboot event, fetching current master")
+				currentMaster, err := getCurrentMaster(ctx, config)
+				if err != nil {
+					log.Printf("Failed to get current master after reboot event: %v", err)
+					continue
+				}
+				log.Printf("Current master after reboot: %v", currentMaster)
+				setCurrentMaster(ctx, config, currentMaster)
 			} else {
 				// log.Printf("Received %s message %s", msg.Channel, msg.Payload)
 			}
