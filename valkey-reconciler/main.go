@@ -16,6 +16,11 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+// SentinelClient interface for testing
+type SentinelClient interface {
+	GetMasterAddrByName(ctx context.Context, name string) *redis.StringSliceCmd
+}
+
 const (
 	// Environment variables
 	envValkeySentinelPort     = "VALKEY_SENTINEL_PORT"
@@ -80,7 +85,7 @@ func getCurrentMaster(ctx context.Context, config *Config) ([]string, error) {
 	return getCurrentMasterFromSentinel(ctx, config, sentinel)
 }
 
-func getCurrentMasterFromSentinel(ctx context.Context, config *Config, sentinel *redis.SentinelClient) ([]string, error) {
+func getCurrentMasterFromSentinel(ctx context.Context, config *Config, sentinel SentinelClient) ([]string, error) {
 	masterAddress, err := sentinel.GetMasterAddrByName(ctx, config.MasterName).Result()
 
 	if err != nil {
