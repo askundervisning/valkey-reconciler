@@ -4,14 +4,15 @@ A Kubernetes controller that listens for Redis Sentinel events and automatically
 
 ## Overview
 
-The Valkey Reconciler monitors Redis Sentinel for `+switch-master` events and maintains accurate labeling of Kubernetes pods to identify which pod is currently serving as the Redis master. This enables services to dynamically route traffic to the correct master instance during failover scenarios.
+The Valkey Reconciler monitors Redis Sentinel for `+switch-master` and `+reboot` events and maintains accurate labeling of Kubernetes pods to identify which pod is currently serving as the Redis master. This enables services to dynamically route traffic to the correct master instance during failover scenarios and after system reboots.
 
 ## How It Works
 
 1. **Initial Master Detection**: On startup, queries Redis Sentinel to identify the current master
 2. **Pod Labeling**: Updates Kubernetes pod labels to mark the master pod with configurable labels
-3. **Event Monitoring**: Subscribes to Redis Sentinel pub/sub for `+switch-master` events
+3. **Event Monitoring**: Subscribes to Redis Sentinel pub/sub for `+switch-master` and `+reboot` events
 4. **Automatic Failover**: When a master switch occurs, removes the master label from the old pod and applies it to the new master pod
+5. **Reboot Handling**: When a `+reboot` event is received, queries Sentinel for the current master and updates pod labels accordingly
 
 ## Architecture
 
